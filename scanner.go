@@ -26,11 +26,14 @@ func Binary(v interface {
 }
 
 func (b binaryType) Scan(val interface{}) error {
-	bytes, ok := val.([]byte)
-	if !ok {
+	switch data := val.(type) {
+	case []byte:
+		return b.value.UnmarshalBinary(data)
+	case string:
+		return b.value.UnmarshalBinary([]byte(data))
+	default:
 		return fmt.Errorf("expected bytes, got %T", val)
 	}
-	return b.value.UnmarshalBinary(bytes)
 }
 
 func (b binaryType) Value() (driver.Value, error) {
@@ -49,11 +52,14 @@ func Json[T any](v T) interface {
 }
 
 func (b jsonType[T]) Scan(val interface{}) error {
-	bytes, ok := val.([]byte)
-	if !ok {
+	switch data := val.(type) {
+	case []byte:
+		return json.Unmarshal(data, b.value)
+	case string:
+		return json.Unmarshal([]byte(data), b.value)
+	default:
 		return fmt.Errorf("expected bytes, got %T", val)
 	}
-	return json.Unmarshal(bytes, b.value)
 }
 
 func (b jsonType[T]) Value() (driver.Value, error) {
