@@ -1,4 +1,4 @@
-package scanner
+package sqlh
 
 import (
 	"database/sql"

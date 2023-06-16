@@ -1,4 +1,4 @@
-module github.com/simon-engledew/scanner
+module github.com/simon-engledew/sqlh
 
 go 1.20
 

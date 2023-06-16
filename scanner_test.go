@@ -1,8 +1,8 @@
-package scanner_test
+package sqlh_test
 
 import (
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/simon-engledew/scanner"
+	"github.com/simon-engledew/sqlh"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -21,7 +21,7 @@ func TestScanner(t *testing.T) {
 		sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "a").AddRow(2, "b"),
 	)
 
-	scan := scanner.Scanner(func(row *row, scan func(...any) error) error {
+	scan := sqlh.Scanner(func(row *row, scan func(...any) error) error {
 		return scan(&row.id, &row.name)
 	})
 
