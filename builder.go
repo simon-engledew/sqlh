@@ -14,7 +14,7 @@ func (e *Expr) String() string {
 }
 
 // In takes parameters and returns an Expr that can be used in an SQL IN clause.
-func In[T any](items ...T) *Expr {
+func In[T any, S ~[]T](items S) *Expr {
 	args := make([]any, 0, len(items))
 	for _, item := range items {
 		args = append(args, item)
