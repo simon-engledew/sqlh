@@ -4,21 +4,19 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/stretchr/testify/require"
 	"runtime"
-	"testing"
 )
 
 func db() *sql.DB {
-	t := &testing.T{}
-	t.Helper()
 	db, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
+	if err != nil {
+		panic(err)
+	}
 
-	pc, _, _, _ := runtime.Caller(1)
+	pc, _, _, ok := runtime.Caller(1)
+	if !ok {
+		panic("could not get caller")
+	}
 	fn := runtime.FuncForPC(pc)
 	switch fn.Name() {
 	case "github.com/simon-engledew/sqlh_test.ExampleBinary":
