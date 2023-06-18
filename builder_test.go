@@ -8,8 +8,7 @@ import (
 )
 
 func ExampleIn() {
-	ids := []int{1, 2, 3}
-	query := sqlh.SQL(`SELECT name FROM in_example WHERE id IN (?)`, sqlh.In(ids))
+	query := sqlh.SQL(`SELECT name FROM in_example WHERE id IN (?)`, sqlh.In(1, 2, 3))
 	fmt.Println(query.Statement, query.Args)
 	// Output: SELECT name FROM in_example WHERE id IN (?, ?, ?) [1 2 3]
 }
@@ -38,8 +37,16 @@ func TestSQL(t *testing.T) {
 	require.Equal(t, []any{1, 2, 3}, d.Args)
 	require.Equal(t, `SELECT * FROM test WHERE id IN (?, ?, ?, ?)`, d.Statement)
 
-	e := sqlh.SQL(`SELECT * FROM test WHERE id IN (?)`, sqlh.In([]int{1, 2, 3}))
+	e := sqlh.SQL(`SELECT * FROM test WHERE id IN (?)`, sqlh.In(1, 2, 3))
 
 	require.Equal(t, []any{1, 2, 3}, e.Args)
 	require.Equal(t, `SELECT * FROM test WHERE id IN (?, ?, ?)`, e.Statement)
+
+	f := sqlh.SQL("(SELECT 1)")
+	g := sqlh.SQL("(SELECT 2)")
+
+	h := sqlh.SQL("SELECT * FROM test WHERE id IN (?)", sqlh.In(f, g))
+
+	require.Equal(t, "SELECT * FROM test WHERE id IN ((SELECT 1), (SELECT 2))", h.Statement)
+	require.Len(t, h.Args, 0)
 }

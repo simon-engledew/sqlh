@@ -14,24 +14,17 @@ func (e *Expr) String() string {
 }
 
 // In takes parameters and returns an Expr that can be used in an SQL IN clause.
-func In[T any](items []T) *Expr {
-	args := make([]any, len(items))
-	for n, item := range items {
-		args[n] = item
-	}
+func In(items ...any) *Expr {
 	var stmt string
-	switch len(args) {
+	switch len(items) {
 	case 0:
 		stmt = ""
 	case 1:
 		stmt = "?"
 	default:
-		stmt = strings.Repeat(", ?", len(args))[2:]
+		stmt = strings.Repeat(", ?", len(items))[2:]
 	}
-	return &Expr{
-		Statement: stmt,
-		Args:      args,
-	}
+	return SQL(stmt, items...)
 }
 
 // SQL takes an SQL fragment and returns an Expr that flattens any nested Expr structs and their
