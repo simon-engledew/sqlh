@@ -13,7 +13,7 @@ func ExampleIn() {
 	// Output: SELECT name FROM in_example WHERE id IN (?, ?, ?) [1 2 3]
 }
 
-func ExampleBuilder() {
+func ExampleSQL() {
 	clause := sqlh.SQL("found = ?", true)
 	expr := sqlh.SQL(`SELECT name FROM builder_example WHERE id = ? AND ?`, 1, clause)
 	var name string
@@ -22,7 +22,7 @@ func ExampleBuilder() {
 	// Output: SELECT name FROM builder_example WHERE id = ? AND found = ? [1 true]
 }
 
-func TestBuilder(t *testing.T) {
+func TestSQL(t *testing.T) {
 	a := sqlh.SQL(`SELECT 1 FROM a WHERE id = ?`, 1)
 
 	b := sqlh.SQL(`SELECT 1 FROM b WHERE id = ?`, 2)
