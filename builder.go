@@ -1,12 +1,21 @@
 package sqlh
 
 import (
+	"context"
 	"strings"
 )
 
 type Expr struct {
 	Statement string
 	Args      []any
+}
+
+func (e *Expr) Query() (string, []any) {
+	return e.Statement, e.Args
+}
+
+func (e *Expr) QueryContext(ctx context.Context) (context.Context, string, []any) {
+	return ctx, e.Statement, e.Args
 }
 
 func (e *Expr) String() string {

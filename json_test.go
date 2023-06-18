@@ -10,7 +10,7 @@ import (
 
 func ExampleJson() {
 	var document any
-	_ = db().QueryRow("SELECT document FROM test").Scan(sqlh.Json(&document))
+	_ = db.QueryRow("SELECT document FROM json_example").Scan(sqlh.Json(&document))
 	fmt.Println(document)
 	// Output: [1 2 3]
 }

@@ -6,8 +6,8 @@ import (
 )
 
 // Scanner takes a function that can scan a given query into P and returns a function
-// that can be given (*sql.Rows, error) and will return a list of P.
-func Scanner[P *V, V any](scan func(P, func(...any) error) error) func(rows *sql.Rows, queryErr error) ([]P, error) {
+// return a list of P when given (*sql.Rows, error).
+func Scanner[P *V, V any](scanFunc func(dest P, scan func(...any) error) error) func(rows *sql.Rows, queryErr error) ([]P, error) {
 	return func(rows *sql.Rows, queryErr error) (out []P, err error) {
 		if queryErr != nil {
 			return out, queryErr
@@ -29,7 +29,7 @@ func Scanner[P *V, V any](scan func(P, func(...any) error) error) func(rows *sql
 
 			var v V
 
-			if err := scan(&v, rows.Scan); err != nil {
+			if err := scanFunc(&v, rows.Scan); err != nil {
 				return out, fmt.Errorf("failed to scan rows: %w", err)
 			}
 

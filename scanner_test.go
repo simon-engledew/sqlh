@@ -16,7 +16,7 @@ func ExampleScanner() {
 		return scan(&item.id, &item.name)
 	})
 
-	items, _ := scanner(db().Query("SELECT id, name FROM test"))
+	items, _ := scanner(db.Query("SELECT id, name FROM scanner_example"))
 	for _, item := range items {
 		fmt.Println(item.id, item.name)
 	}

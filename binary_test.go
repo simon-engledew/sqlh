@@ -11,7 +11,7 @@ import (
 
 func ExampleBinary() {
 	var location url.URL
-	_ = db().QueryRow("SELECT location FROM test").Scan(sqlh.Binary(&location))
+	_ = db.QueryRow("SELECT location FROM binary_example").Scan(sqlh.Binary(&location))
 	fmt.Println(location.String())
 	// Output: http://example.com
 }
