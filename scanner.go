@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Scan is shorthand for the sql.Rows.Scan method.
 type Scan func(...any) error
 
 // Scanner takes a function that can scan a given query into P and returns a function
