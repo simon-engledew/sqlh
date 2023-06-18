@@ -1,4 +1,3 @@
-// Package builder has a method for joining SQL expressions together.
 package sqlh
 
 import (

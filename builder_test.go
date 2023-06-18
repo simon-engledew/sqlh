@@ -1,10 +1,26 @@
 package sqlh_test
 
 import (
+	"fmt"
 	"github.com/simon-engledew/sqlh"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
+
+func ExampleIn() {
+	ids := []int{1, 2, 3}
+	fmt.Println(sqlh.SQL(`SELECT name FROM a WHERE id IN (?)`, sqlh.In(ids)).Statement)
+	// Output: SELECT name FROM a WHERE id IN (?, ?, ?)
+}
+
+func ExampleBuilder() {
+	clause := sqlh.SQL("found = ?", true)
+	query := sqlh.SQL(`SELECT name FROM a WHERE id = ? AND ?`, 1, clause)
+	fmt.Println(query.Statement)
+	fmt.Println(query.Args)
+	// Output: SELECT name FROM a WHERE id = ? AND found = ?
+	// [1 true]
+}
 
 func TestBuilder(t *testing.T) {
 	a := sqlh.SQL(`SELECT 1 FROM a WHERE id = ?`, 1)

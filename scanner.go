@@ -2,74 +2,11 @@ package sqlh
 
 import (
 	"database/sql"
-	"database/sql/driver"
-	"encoding"
-	"encoding/json"
 	"fmt"
 )
 
-type binaryType struct {
-	value interface {
-		encoding.BinaryMarshaler
-		encoding.BinaryUnmarshaler
-	}
-}
-
-func Binary(v interface {
-	encoding.BinaryMarshaler
-	encoding.BinaryUnmarshaler
-}) interface {
-	sql.Scanner
-	driver.Valuer
-} {
-	return binaryType{value: v}
-}
-
-func (b binaryType) Scan(val interface{}) error {
-	switch data := val.(type) {
-	case []byte:
-		return b.value.UnmarshalBinary(data)
-	case string:
-		return b.value.UnmarshalBinary([]byte(data))
-	default:
-		return fmt.Errorf("expected bytes, got %T", val)
-	}
-}
-
-func (b binaryType) Value() (driver.Value, error) {
-	return b.value.MarshalBinary()
-}
-
-type jsonType[T any] struct {
-	value T
-}
-
-func Json[T any](v T) interface {
-	sql.Scanner
-	driver.Valuer
-} {
-	return jsonType[T]{value: v}
-}
-
-func (b jsonType[T]) Scan(val interface{}) error {
-	switch data := val.(type) {
-	case []byte:
-		return json.Unmarshal(data, b.value)
-	case string:
-		return json.Unmarshal([]byte(data), b.value)
-	default:
-		return fmt.Errorf("expected bytes, got %T", val)
-	}
-}
-
-func (b jsonType[T]) Value() (driver.Value, error) {
-	data, err := json.Marshal(b.value)
-	return string(data), err
-}
-
 // Scanner takes a function that can scan a given query into P and returns a function
 // that can be given (*sql.Rows, error) and will return a list of P.
-// The benefit of this approach is that it does not need to use reflection to fetch struct names.
 func Scanner[P *V, V any](scan func(P, func(...any) error) error) func(rows *sql.Rows, queryErr error) ([]P, error) {
 	return func(rows *sql.Rows, queryErr error) (out []P, err error) {
 		if queryErr != nil {
