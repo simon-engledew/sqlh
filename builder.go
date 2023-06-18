@@ -27,7 +27,7 @@ func In(items ...any) *Expr {
 	return SQL(stmt, items...)
 }
 
-// SQL takes an SQL fragment and returns an Expr that flattens any nested Expr structs and their
+// SQL takes an SQL fragment and returns an Expr that flattens any nested queries and their
 // arguments.
 func SQL(stmt string, args ...any) *Expr {
 	expr := &Expr{}

@@ -9,10 +9,7 @@ import (
 )
 
 func ExampleScanner() {
-	scanner := sqlh.Scanner(func(item *struct {
-		id   int
-		name string
-	}, scan func(...any) error) error {
+	scanner := sqlh.Scanner(func(item *testRow, scan sqlh.Scan) error {
 		return scan(&item.id, &item.name)
 	})
 
@@ -40,7 +37,7 @@ func TestScanner(t *testing.T) {
 		sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "a").AddRow(2, "b"),
 	)
 
-	scan := sqlh.Scanner(func(row *testRow, scan func(...any) error) error {
+	scan := sqlh.Scanner(func(row *testRow, scan sqlh.Scan) error {
 		return scan(&row.id, &row.name)
 	})
 
@@ -52,4 +49,29 @@ func TestScanner(t *testing.T) {
 	rows, err := scan(db.Query("SELECT id, name FROM test"))
 	require.NoError(t, err)
 	require.Equal(t, expected, rows)
+}
+
+func TestScannerAnonymous(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
+
+	mock.ExpectQuery("SELECT id, name FROM test").WillReturnRows(
+		sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "a").AddRow(2, "b"),
+	)
+
+	scan := sqlh.Scanner(func(row *struct {
+		id   int
+		name string
+	}, scan sqlh.Scan) error {
+		return scan(&row.id, &row.name)
+	})
+
+	rows, err := scan(db.Query("SELECT id, name FROM test"))
+	require.NoError(t, err)
+	require.Len(t, rows, 2)
+	require.Equal(t, 1, rows[0].id)
+	require.Equal(t, 2, rows[1].id)
 }

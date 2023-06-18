@@ -5,9 +5,11 @@ import (
 	"fmt"
 )
 
+type Scan func(...any) error
+
 // Scanner takes a function that can scan a given query into P and returns a function
 // return a list of P when given (*sql.Rows, error).
-func Scanner[P *V, V any](scanFunc func(dest P, scan func(...any) error) error) func(rows *sql.Rows, queryErr error) ([]P, error) {
+func Scanner[P *V, V any](scanFunc func(dest P, scan Scan) error) func(rows *sql.Rows, queryErr error) ([]P, error) {
 	return func(rows *sql.Rows, queryErr error) (out []P, err error) {
 		if queryErr != nil {
 			return out, queryErr
