@@ -1,7 +1,6 @@
 package sqlh
 
 import (
-	"context"
 	"strings"
 )
 
@@ -10,18 +9,11 @@ type Expr struct {
 	Args      []any
 }
 
-func (e *Expr) Query() (string, []any) {
-	return e.Statement, e.Args
-}
-
-func (e *Expr) QueryContext(ctx context.Context) (context.Context, string, []any) {
-	return ctx, e.Statement, e.Args
-}
-
 func (e *Expr) String() string {
 	return e.Statement
 }
 
+// In takes parameters and returns an Expr that can be used in an SQL IN clause.
 func In[T any](items []T) *Expr {
 	args := make([]any, len(items))
 	for n, item := range items {
@@ -42,6 +34,7 @@ func In[T any](items []T) *Expr {
 	}
 }
 
+// SQL
 func SQL(doc string, args ...any) *Expr {
 	expr := &Expr{}
 	expr.Args = make([]any, 0, len(args))

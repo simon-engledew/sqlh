@@ -9,7 +9,8 @@ import (
 
 func ExampleIn() {
 	ids := []int{1, 2, 3}
-	fmt.Println(sqlh.SQL(`SELECT name FROM in_example WHERE id IN (?)`, sqlh.In(ids)).Query())
+	query := sqlh.SQL(`SELECT name FROM in_example WHERE id IN (?)`, sqlh.In(ids))
+	fmt.Println(query.Statement, query.Args)
 	// Output: SELECT name FROM in_example WHERE id IN (?, ?, ?) [1 2 3]
 }
 
@@ -17,9 +18,9 @@ func ExampleSQL() {
 	clause := sqlh.SQL("found = ?", true)
 	expr := sqlh.SQL(`SELECT name FROM builder_example WHERE id = ? AND ?`, 1, clause)
 	var name string
-	_ = db.QueryRowContext(expr.QueryContext(ctx)).Scan(&name)
-	fmt.Println(expr.Query())
-	// Output: SELECT name FROM builder_example WHERE id = ? AND found = ? [1 true]
+	_ = db.QueryRow(expr.Statement, expr.Args...).Scan(&name)
+	fmt.Println(name)
+	// Output: example
 }
 
 func TestSQL(t *testing.T) {
@@ -29,10 +30,8 @@ func TestSQL(t *testing.T) {
 
 	c := sqlh.SQL(`SELECT * FROM (?) AS a, (?) AS b LIMIT ?, ?`, a, b, 1, 10)
 
-	stmt, args := c.Query()
-
-	require.Equal(t, []any{1, 2, 1, 10}, args)
-	require.Equal(t, `SELECT * FROM (SELECT 1 FROM a WHERE id = ?) AS a, (SELECT 1 FROM b WHERE id = ?) AS b LIMIT ?, ?`, stmt)
+	require.Equal(t, []any{1, 2, 1, 10}, c.Args)
+	require.Equal(t, `SELECT * FROM (SELECT 1 FROM a WHERE id = ?) AS a, (SELECT 1 FROM b WHERE id = ?) AS b LIMIT ?, ?`, c.Statement)
 
 	d := sqlh.SQL(`SELECT * FROM test WHERE id IN (?, ?, ?, ?)`, 1, 2, 3)
 

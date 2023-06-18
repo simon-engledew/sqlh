@@ -1,2 +1,2 @@
-// Package sqlh includes a few very lightweight sql helpers.
+// Package sqlh provides lightweight sql helpers.
 package sqlh
