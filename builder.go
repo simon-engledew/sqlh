@@ -34,12 +34,13 @@ func In[T any](items []T) *Expr {
 	}
 }
 
-// SQL
-func SQL(doc string, args ...any) *Expr {
+// SQL takes an SQL fragment and returns an Expr that flattens any nested Expr structs and their
+// arguments.
+func SQL(stmt string, args ...any) *Expr {
 	expr := &Expr{}
 	expr.Args = make([]any, 0, len(args))
 
-	sections := strings.Split(doc, "?")
+	sections := strings.Split(stmt, "?")
 
 	out := make([]string, 0, len(sections))
 
