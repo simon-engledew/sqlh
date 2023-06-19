@@ -9,7 +9,7 @@ import (
 )
 
 func ExampleScanner() {
-	scanner := sqlh.Scanner(func(item *testRow, scan sqlh.Scan) error {
+	scanner := sqlh.Scanner(func(item *testRow, scan func(...any) error) error {
 		return scan(&item.id, &item.name)
 	})
 
@@ -37,7 +37,7 @@ func TestScanner(t *testing.T) {
 		sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "a").AddRow(2, "b"),
 	)
 
-	scan := sqlh.Scanner(func(row *testRow, scan sqlh.Scan) error {
+	scan := sqlh.Scanner(func(row *testRow, scan func(...any) error) error {
 		return scan(&row.id, &row.name)
 	})
 
@@ -65,7 +65,7 @@ func TestScannerAnonymous(t *testing.T) {
 	scan := sqlh.Scanner(func(row *struct {
 		id   int
 		name string
-	}, scan sqlh.Scan) error {
+	}, scan func(...any) error) error {
 		return scan(&row.id, &row.name)
 	})
 
