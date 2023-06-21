@@ -61,5 +61,5 @@ func Scan[P *V, V any](rows *sql.Rows, scan func(P, func(...any) error) error) (
 		out = append(out, &v)
 	}
 
-	return
+	return out, rows.Err()
 }
