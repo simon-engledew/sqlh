@@ -1,11 +1,10 @@
 package sqlh
 
 import (
-	"database/sql"
 	"fmt"
 )
 
-func Pluck[V any](rows *sql.Rows, queryErr error) (out []V, err error) {
+func Pluck[V any](rows Rows, queryErr error) (out []V, err error) {
 	if queryErr != nil {
 		return out, queryErr
 	}
@@ -37,7 +36,7 @@ func Pluck[V any](rows *sql.Rows, queryErr error) (out []V, err error) {
 }
 
 // Scan takes a function that can scan a given sql.Rows into []P.
-func Scan[P *V, V any](rows *sql.Rows, scan func(P, func(...any) error) error) (out []P, err error) {
+func Scan[P *V, V any](rows Rows, scan func(P, func(...any) error) error) (out []P, err error) {
 	defer func() {
 		rowsErr := rows.Close()
 		if rowsErr != nil {
