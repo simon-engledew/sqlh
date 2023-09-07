@@ -1,3 +1,4 @@
+[![Build Status](https://github.com/simon-engledew/sqlh/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/simon-engledew/sqlh/actions)
 [![GoDoc](https://godoc.org/github.com/simon-engledew/sqlh?status.svg)](https://godoc.org/github.com/simon-engledew/sqlh)
 [![Go Report Card](https://goreportcard.com/badge/github.com/simon-engledew/sqlh)](https://goreportcard.com/report/github.com/simon-engledew/sqlh)
 
