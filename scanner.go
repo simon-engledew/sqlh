@@ -1,9 +1,11 @@
 package sqlh
 
 import (
+	"errors"
 	"fmt"
 )
 
+// Pluck will scan the results of a query that produces a single column.
 func Pluck[V any](rows Rows, queryErr error) (out []V, err error) {
 	if queryErr != nil {
 		return out, queryErr
@@ -13,14 +15,10 @@ func Pluck[V any](rows Rows, queryErr error) (out []V, err error) {
 	})
 }
 
+// Iter calls fn for each successful call to rows.Next, closing the rows at the end.
 func Iter(rows Rows, fn func() error) (err error) {
 	defer func() {
-		rowsErr := rows.Close()
-		if rowsErr != nil {
-			if err == nil {
-				err = fmt.Errorf("failed to close rows: %w", rowsErr)
-			}
-		}
+		err = errors.Join(err, rows.Close())
 	}()
 
 	for rows.Next() {
@@ -36,6 +34,7 @@ func Iter(rows Rows, fn func() error) (err error) {
 	return rows.Err()
 }
 
+// ScanV takes a function that can scan a given sql.Rows into []V.
 func ScanV[P *V, V any](rows Rows, scan func(P, func(...any) error) error) (out []V, err error) {
 	err = Iter(rows, func() error {
 		var v V
