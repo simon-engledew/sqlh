@@ -1,7 +1,12 @@
 package sqlh
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 )
 
 type Expr struct {
@@ -9,12 +14,12 @@ type Expr struct {
 	Args      []any
 }
 
-func (e *Expr) String() string {
+func (e Expr) String() string {
 	return e.Statement
 }
 
 // In takes parameters and returns an Expr that can be used in an SQL IN clause.
-func In[T any, S ~[]T](items S) *Expr {
+func In[T any, S ~[]T](items S) Expr {
 	args := make([]any, 0, len(items))
 	for _, item := range items {
 		args = append(args, item)
@@ -31,10 +36,54 @@ func In[T any, S ~[]T](items S) *Expr {
 	return SQL(stmt, args...)
 }
 
+func indent(v string) string {
+	if !strings.Contains(v, "\n") {
+		return v
+	}
+	return "\n\t" + strings.Join(strings.Split(strings.TrimSpace(v), "\n"), "\n\t") + "\n"
+}
+
+var moduleRoot = sync.OnceValue(func() string {
+	dir, _ := os.Getwd()
+	if dir == "" {
+		return dir
+	}
+
+	dir = filepath.Clean(dir)
+
+	// Look for enclosing go.mod.
+	for {
+		if fi, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil && !fi.IsDir() {
+			return dir
+		}
+		d := filepath.Dir(dir)
+		if d == dir {
+			break
+		}
+		dir = d
+	}
+
+	return ""
+})
+
+// DebugSQL annotates the query with the caller and indents it if it contains a newline.
+func DebugSQL(stmt string, args ...any) Expr {
+	_, file, line, _ := runtime.Caller(1)
+	path, _ := filepath.Rel(moduleRoot(), file)
+
+	for n, arg := range args {
+		if subquery, ok := arg.(Expr); ok {
+			args[n] = Expr{Statement: indent(subquery.Statement), Args: subquery.Args}
+		}
+	}
+
+	return SQL(fmt.Sprintf("\n/* %s:%d */ %s", path, line, stmt), args...)
+}
+
 // SQL takes an SQL fragment and returns an Expr that flattens any nested queries and their
 // arguments.
-func SQL(stmt string, args ...any) *Expr {
-	expr := &Expr{}
+func SQL(stmt string, args ...any) Expr {
+	var expr Expr
 	expr.Args = make([]any, 0, len(args))
 
 	sections := strings.Split(stmt, "?")
@@ -45,7 +94,7 @@ func SQL(stmt string, args ...any) *Expr {
 		out = append(out, section)
 		if idx < len(args) {
 			arg := args[idx]
-			if subquery, ok := arg.(*Expr); ok {
+			if subquery, ok := arg.(Expr); ok {
 				out = append(out, subquery.Statement)
 				expr.Args = append(expr.Args, subquery.Args...)
 				continue

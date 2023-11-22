@@ -50,3 +50,11 @@ func TestSQL(t *testing.T) {
 	require.Equal(t, "SELECT * FROM test WHERE id IN ((SELECT 1), (SELECT 2))", h.Statement)
 	require.Len(t, h.Args, 0)
 }
+
+func TestDebugSQL(t *testing.T) {
+	a := sqlh.DebugSQL(`SELECT 1 FROM a WHERE id = ?`, 1)
+
+	b := sqlh.DebugSQL(`SELECT 1 FROM b WHERE id = ?`, 2)
+
+	sqlh.DebugSQL(`SELECT * FROM (?) AS a, (?) AS b LIMIT ?, ?`, a, b, 1, 10)
+}
