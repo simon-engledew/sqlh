@@ -2,7 +2,7 @@ package sqlh
 
 import (
 	"fmt"
-	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -43,33 +43,17 @@ func indent(v string) string {
 	return "\n\t" + strings.Join(strings.Split(strings.TrimSpace(v), "\n"), "\n\t") + "\n"
 }
 
+func ignoreError[T []byte | string](s T, _ error) string {
+	return string(s)
+}
+
 var moduleRoot = sync.OnceValue(func() string {
-	dir, _ := os.Getwd()
-	if dir == "" {
-		return dir
-	}
-
-	dir = filepath.Clean(dir)
-
-	// Look for enclosing go.mod.
-	for {
-		if fi, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil && !fi.IsDir() {
-			return dir
-		}
-		d := filepath.Dir(dir)
-		if d == dir {
-			break
-		}
-		dir = d
-	}
-
-	return ""
+	return filepath.Dir(ignoreError(exec.Command("go", "env", "GOMOD").Output()))
 })
 
 // DebugSQL annotates the query with the caller and indents it if it contains a newline.
 func DebugSQL(stmt string, args ...any) Expr {
 	_, file, line, _ := runtime.Caller(1)
-	path, _ := filepath.Rel(moduleRoot(), file)
 
 	for n, arg := range args {
 		if subquery, ok := arg.(Expr); ok {
@@ -77,7 +61,11 @@ func DebugSQL(stmt string, args ...any) Expr {
 		}
 	}
 
-	return SQL(fmt.Sprintf("\n/* %s:%d */ %s", path, line, stmt), args...)
+	if path := ignoreError(filepath.Rel(moduleRoot(), file)); path != "" {
+		return SQL(fmt.Sprintf("\n/* %s:%d */ %s", path, line, stmt), args...)
+	}
+
+	return SQL(stmt, args...)
 }
 
 // SQL takes an SQL fragment and returns an Expr that flattens any nested queries and their
