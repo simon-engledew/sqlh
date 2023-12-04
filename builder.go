@@ -24,16 +24,8 @@ func In[T any, S ~[]T](items S) Expr {
 	for _, item := range items {
 		args = append(args, item)
 	}
-	var stmt string
-	switch len(items) {
-	case 0:
-		stmt = ""
-	case 1:
-		stmt = "?"
-	default:
-		stmt = strings.Repeat(", ?", len(items))[2:]
-	}
-	return SQL(stmt, args...)
+	stmt := strings.Repeat(", ?", len(items))
+	return SQL(stmt[min(2, len(stmt)):], args...)
 }
 
 func indent(v string) string {
@@ -74,7 +66,7 @@ func SQL(stmt string, args ...any) Expr {
 	var expr Expr
 	expr.Args = make([]any, 0, len(args))
 
-	sections := strings.Split(stmt, "?")
+	sections := strings.SplitN(stmt, "?", len(args)+1)
 
 	out := make([]string, 0, len(sections))
 

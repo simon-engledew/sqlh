@@ -22,6 +22,13 @@ func ExampleSQL() {
 	// Output: example
 }
 
+func TestIn(t *testing.T) {
+	require.Equal(t, "?, ?, ?", sqlh.In([]int{1, 2, 3}).Statement)
+	require.Equal(t, "?, ?", sqlh.In([]int{1, 2}).Statement)
+	require.Equal(t, "?", sqlh.In([]int{1}).Statement)
+	require.Equal(t, "", sqlh.In([]int{}).Statement)
+}
+
 func TestSQL(t *testing.T) {
 	a := sqlh.SQL(`SELECT 1 FROM a WHERE id = ?`, 1)
 
