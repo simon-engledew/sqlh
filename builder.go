@@ -63,27 +63,46 @@ func DebugSQL(stmt string, args ...any) Expr {
 // SQL takes an SQL fragment and returns an Expr that flattens any nested queries and their
 // arguments.
 func SQL(stmt string, args ...any) Expr {
-	var expr Expr
-	expr.Args = make([]any, 0, len(args))
-
-	sections := strings.SplitN(stmt, "?", len(args)+1)
-
-	out := make([]string, 0, len(sections))
-
-	for idx, section := range sections {
-		out = append(out, section)
-		if idx < len(args) {
-			arg := args[idx]
-			if subquery, ok := arg.(Expr); ok {
-				out = append(out, subquery.Statement)
-				expr.Args = append(expr.Args, subquery.Args...)
-				continue
-			}
-			expr.Args = append(expr.Args, arg)
-		}
-		out = append(out, "?")
+	if len(args) == 0 {
+		return Expr{Statement: stmt}
 	}
 
-	expr.Statement = strings.Join(out[:len(out)-1], "")
+	var expr Expr
+
+	stmtSize := len(stmt)
+	argsSize := len(args)
+	for _, arg := range args {
+		if sub, ok := arg.(Expr); ok {
+			stmtSize += len(sub.Statement)
+			argsSize += len(sub.Args)
+		}
+	}
+
+	expr.Args = make([]any, 0, argsSize)
+
+	var b strings.Builder
+	b.Grow(stmtSize)
+
+	var end, start int
+	for i := 0; i < len(args); i += 1 {
+		idx := strings.IndexByte(stmt[end:], '?')
+		start, end = end, end+idx+1
+
+		arg := args[i]
+		if sub, ok := arg.(Expr); ok {
+			b.WriteString(stmt[start : end-1])
+			b.WriteString(sub.Statement)
+
+			expr.Args = append(expr.Args, sub.Args...)
+		} else {
+			b.WriteString(stmt[start:end])
+
+			expr.Args = append(expr.Args, arg)
+		}
+	}
+
+	b.WriteString(stmt[end:])
+
+	expr.Statement = b.String()
 	return expr
 }
