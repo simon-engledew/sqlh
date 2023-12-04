@@ -27,7 +27,7 @@ grouped.updated_at DESC
 LIMIT ?, ?`, grouped, 10, 100)
 
 // execute the query and get some rows back
-rows, err := db.QueryContext(ctx, query.Statement, query.Args...)
+rows, err := query.QueryContext(ctx, db)
 if err != nil {
 	return err
 }

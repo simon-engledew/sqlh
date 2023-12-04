@@ -1,6 +1,8 @@
 package sqlh
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -16,6 +18,30 @@ type Expr struct {
 
 func (e Expr) String() string {
 	return e.Statement
+}
+
+func (e Expr) Query(db *sql.DB) (*sql.Rows, error) {
+	return db.Query(e.Statement, e.Args...)
+}
+
+func (e Expr) QueryContext(ctx context.Context, db *sql.DB) (*sql.Rows, error) {
+	return db.QueryContext(ctx, e.Statement, e.Args...)
+}
+
+func (e Expr) QueryRow(db *sql.DB) *sql.Row {
+	return db.QueryRow(e.Statement, e.Args...)
+}
+
+func (e Expr) QueryRowContext(ctx context.Context, db *sql.DB) *sql.Row {
+	return db.QueryRowContext(ctx, e.Statement, e.Args...)
+}
+
+func (e Expr) Exec(db *sql.DB) (sql.Result, error) {
+	return db.Exec(e.Statement, e.Args...)
+}
+
+func (e Expr) ExecContext(ctx context.Context, db *sql.DB) (sql.Result, error) {
+	return db.ExecContext(ctx, e.Statement, e.Args...)
 }
 
 // In takes parameters and returns an Expr that can be used in an SQL IN clause.
