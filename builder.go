@@ -20,23 +20,30 @@ func (e Expr) String() string {
 
 // In takes parameters and returns an Expr that can be used in an SQL IN clause.
 func In[T any, S ~[]T](items S) Expr {
-	if len(items) == 0 {
+	switch size := len(items); size {
+	case 0:
 		return Expr{}
+	case 1:
+		return SQL("?", items[0])
+	case 2:
+		return SQL("?, ?", items[0], items[1])
+	case 3:
+		return SQL("?, ?, ?", items[0], items[1], items[2])
+	default:
+		var b strings.Builder
+		b.Grow((size * 3) - 2)
+		b.WriteString("?")
+
+		args := make([]any, 1, len(items))
+		args[0] = items[0]
+
+		for _, item := range items[1:] {
+			args = append(args, item)
+			b.WriteString(", ?")
+		}
+
+		return SQL(b.String(), args...)
 	}
-
-	var b strings.Builder
-	b.Grow((len(items) * 3) - 2)
-	b.WriteString("?")
-
-	args := make([]any, 1, len(items))
-	args[0] = items[0]
-
-	for _, item := range items[1:] {
-		args = append(args, item)
-		b.WriteString(", ?")
-	}
-
-	return SQL(b.String(), args...)
 }
 
 func indent(v string) string {

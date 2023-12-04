@@ -23,10 +23,24 @@ func ExampleSQL() {
 }
 
 func TestIn(t *testing.T) {
-	require.Equal(t, "?, ?, ?", sqlh.In([]int{1, 2, 3}).Statement)
-	require.Equal(t, "?, ?", sqlh.In([]int{1, 2}).Statement)
-	require.Equal(t, "?", sqlh.In([]int{1}).Statement)
-	require.Equal(t, "", sqlh.In([]int{}).Statement)
+	for _, v := range []struct {
+		Args     []int
+		Expected string
+	}{
+		{[]int{1, 2, 3, 4, 5}, "?, ?, ?, ?, ?"},
+		{[]int{1, 2, 3, 4}, "?, ?, ?, ?"},
+		{[]int{1, 2, 3}, "?, ?, ?"},
+		{[]int{1, 2}, "?, ?"},
+		{[]int{1}, "?"},
+		{[]int{}, ""},
+	} {
+		q := sqlh.In(v.Args)
+		require.Equal(t, v.Expected, q.Statement)
+		require.Len(t, q.Args, len(v.Args))
+		for n := range v.Args {
+			require.Equal(t, v.Args[n], q.Args[n])
+		}
+	}
 }
 
 func TestSQL(t *testing.T) {
