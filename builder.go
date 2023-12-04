@@ -24,7 +24,7 @@ func In[T any, S ~[]T](items S) Expr {
 	case 0:
 		return Expr{}
 	case 1:
-		return Expr{Statement: "?", Args: []any{items[0]}}
+		return SQL("?", items[0])
 	}
 
 	var b strings.Builder
