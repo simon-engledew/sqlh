@@ -72,6 +72,14 @@ func In[T any, S ~[]T](items S) Expr {
 	}
 }
 
+func Values(values ...[]any) Expr {
+	items := make([]Expr, len(values))
+	for n, value := range values {
+		items[n] = SQL("(?)", In(value))
+	}
+	return In(items)
+}
+
 func indent(v string) string {
 	if !strings.Contains(v, "\n") {
 		return v
@@ -130,6 +138,10 @@ func SQL(stmt string, args ...any) Expr {
 	var end, start int
 	for i := 0; i < len(args); i += 1 {
 		idx := strings.IndexByte(stmt[end:], '?')
+		if idx < 0 {
+			break
+		}
+
 		start, end = end, end+idx+1
 
 		arg := args[i]

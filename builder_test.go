@@ -70,6 +70,16 @@ func TestSQL(t *testing.T) {
 
 	require.Equal(t, "SELECT * FROM test WHERE id IN ((SELECT 1), (SELECT 2))", h.Statement)
 	require.Len(t, h.Args, 0)
+
+	i := sqlh.SQL(`SELECT 1 FROM a WHERE id = ?`)
+	require.Equal(t, `SELECT 1 FROM a WHERE id = ?`, i.Statement)
+
+	j := sqlh.SQL(`INSERT INTO a (id, name) VALUES ?`, sqlh.Values(
+		[]any{1, "hello"},
+		[]any{2, "test"},
+	))
+	require.Equal(t, `INSERT INTO a (id, name) VALUES (?, ?), (?, ?)`, j.Statement)
+	require.Equal(t, []any{1, "hello", 2, "test"}, j.Args)
 }
 
 func TestDebugSQL(t *testing.T) {
