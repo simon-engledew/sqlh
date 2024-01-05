@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 // Pluck will scan the results of a query that produces a single column.
@@ -61,6 +62,15 @@ func Scan[P *V, V any](rows Rows, scan func(P, Rows) error) (out []P, err error)
 	return
 }
 
+func guessField(t reflect.Type, name string) int {
+	for i := 0; i < t.NumField(); i++ {
+		if strings.EqualFold(name, t.Field(i).Name) {
+			return i
+		}
+	}
+	panic("field not found")
+}
+
 func ToStruct[V any, P *V]() func(P, Rows) error {
 	fields := map[string]int{}
 
@@ -68,13 +78,10 @@ func ToStruct[V any, P *V]() func(P, Rows) error {
 		var zero V
 		zeroType := reflect.TypeOf(zero)
 		for i := 0; i < zeroType.NumField(); i++ {
-			field := zeroType.Field(i)
-			if field.IsExported() {
-				name := field.Tag.Get("sql")
-				if name == "" {
-					name = field.Name
+			if field := zeroType.Field(i); field.IsExported() {
+				if name := field.Tag.Get("sql"); name != "" {
+					fields[name] = i
 				}
-				fields[name] = i
 			}
 		}
 	}
@@ -86,16 +93,17 @@ func ToStruct[V any, P *V]() func(P, Rows) error {
 		}
 
 		v := reflect.Indirect(reflect.ValueOf(p))
+
 		args := make([]any, len(types))
 
 		for i, c := range types {
-			name, ok := fields[c.Name()]
+			idx, ok := fields[c.Name()]
 			if !ok {
-				return fmt.Errorf("unknown column %q", c.Name())
+				idx = guessField(v.Type(), strings.ReplaceAll(c.Name(), "_", ""))
+				fields[c.Name()] = idx
 			}
-			field := v.Field(name)
 
-			args[i] = field.Addr().Interface()
+			args[i] = v.Field(idx).Addr().Interface()
 		}
 
 		return rows.Scan(args...)

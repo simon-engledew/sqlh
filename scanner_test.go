@@ -99,8 +99,8 @@ func TestScannerAnonymous(t *testing.T) {
 }
 
 type testStruct struct {
-	ID   int    `sql:"id"`
-	Name string `sql:"name"`
+	ID   int
+	Name string
 }
 
 func TestStructs(t *testing.T) {
