@@ -9,6 +9,7 @@ type Rows interface {
 	Next() bool
 	Err() error
 	Scan(...any) error
+	ColumnTypes() ([]*sql.ColumnType, error)
 }
 
 var _ Rows = &sql.Rows{}

@@ -10,8 +10,8 @@ import (
 
 func ExampleScanner() {
 	rows, _ := db.Query("SELECT id, name FROM scanner_example")
-	items, _ := sqlh.Scan(rows, func(item *testRow, scan func(...any) error) error {
-		return scan(&item.id, &item.name)
+	items, _ := sqlh.Scan(rows, func(item *testRow, rows sqlh.Rows) error {
+		return rows.Scan(&item.id, &item.name)
 	})
 	for _, item := range items {
 		fmt.Println(item.id, item.name)
@@ -39,8 +39,8 @@ func TestScanner(t *testing.T) {
 	rows, err := db.Query("SELECT id, name FROM test")
 	require.NoError(t, err)
 
-	items, err := sqlh.Scan(rows, func(row *testRow, scan func(...any) error) error {
-		return scan(&row.id, &row.name)
+	items, err := sqlh.Scan(rows, func(row *testRow, rows sqlh.Rows) error {
+		return rows.Scan(&row.id, &row.name)
 	})
 	require.NoError(t, err)
 
@@ -88,12 +88,41 @@ func TestScannerAnonymous(t *testing.T) {
 	items, err := sqlh.Scan(rows, func(row *struct {
 		id   int
 		name string
-	}, scan func(...any) error) error {
-		return scan(&row.id, &row.name)
+	}, rows sqlh.Rows) error {
+		return rows.Scan(&row.id, &row.name)
 	})
 	require.NoError(t, err)
 
 	require.Len(t, items, 2)
 	require.Equal(t, 1, items[0].id)
 	require.Equal(t, 2, items[1].id)
+}
+
+type testStruct struct {
+	ID   int    `sql:"id"`
+	Name string `sql:"name"`
+}
+
+func TestStructs(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
+
+	mock.ExpectQuery("SELECT id, name FROM test").WillReturnRows(
+		sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "a").AddRow(2, "b"),
+	)
+
+	rows, err := db.Query("SELECT id, name FROM test")
+	require.NoError(t, err)
+
+	items, err := sqlh.Scan(rows, sqlh.ToStruct[testStruct]())
+	require.NoError(t, err)
+
+	require.Len(t, items, 2)
+	require.Equal(t, 1, items[0].ID)
+	require.Equal(t, "a", items[0].Name)
+	require.Equal(t, 2, items[1].ID)
+	require.Equal(t, "b", items[1].Name)
 }
