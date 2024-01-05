@@ -82,7 +82,8 @@ func Guess(col string) func(field reflect.StructField) bool {
 func Tags(key string) func(col string) func(field reflect.StructField) bool {
 	return func(col string) func(field reflect.StructField) bool {
 		return func(field reflect.StructField) bool {
-			return field.Tag.Get(key) == col
+			tag, _, _ := strings.Cut(field.Tag.Get(key), ",")
+			return tag == col
 		}
 	}
 }

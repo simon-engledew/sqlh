@@ -128,8 +128,8 @@ func TestScanIntoWithGuess(t *testing.T) {
 }
 
 type taggedTestStruct struct {
-	ID   int    `sql:"id"`
-	Name string `sql:"name"`
+	ID   int    `json:"id"`
+	Name string `json:"name,omitempty"`
 }
 
 func TestScanIntoWithTags(t *testing.T) {
@@ -146,7 +146,7 @@ func TestScanIntoWithTags(t *testing.T) {
 	rows, err := db.Query("SELECT id, name FROM test")
 	require.NoError(t, err)
 
-	items, err := sqlh.Scan(rows, sqlh.Into[taggedTestStruct](sqlh.Tags("sql")))
+	items, err := sqlh.Scan(rows, sqlh.Into[taggedTestStruct](sqlh.Tags("json")))
 	require.NoError(t, err)
 
 	require.Len(t, items, 2)
