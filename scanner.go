@@ -62,30 +62,33 @@ func Scan[P *V, V any](rows Rows, scan func(P, Rows) error) (out []P, err error)
 	return
 }
 
-func guessField(t reflect.Type, name string) int {
+func findFieldIndex(t reflect.Type, pred func(field reflect.StructField) bool) (int, bool) {
 	for i := 0; i < t.NumField(); i++ {
-		if strings.EqualFold(name, t.Field(i).Name) {
-			return i
+		if pred(t.Field(i)) {
+			return i, true
 		}
 	}
-	panic("field not found")
+	return 0, false
 }
 
-func ToStruct[V any, P *V]() func(P, Rows) error {
-	fields := map[string]int{}
+func Guess(col string) func(field reflect.StructField) bool {
+	guess := strings.ReplaceAll(col, "_", "")
 
-	{
-		var zero V
-		zeroType := reflect.TypeOf(zero)
-		for i := 0; i < zeroType.NumField(); i++ {
-			if field := zeroType.Field(i); field.IsExported() {
-				if name := field.Tag.Get("sql"); name != "" {
-					fields[name] = i
-				}
-			}
+	return func(field reflect.StructField) bool {
+		return strings.EqualFold(guess, field.Name)
+	}
+}
+
+func Tags(key string) func(col string) func(field reflect.StructField) bool {
+	return func(col string) func(field reflect.StructField) bool {
+		return func(field reflect.StructField) bool {
+			return field.Tag.Get(key) == col
 		}
 	}
+}
 
+func Into[V any, P *V](matcher func(col string) func(field reflect.StructField) bool) func(P, Rows) error {
+	cache := map[string]int{}
 	return func(p P, rows Rows) error {
 		types, err := rows.ColumnTypes()
 		if err != nil {
@@ -97,10 +100,14 @@ func ToStruct[V any, P *V]() func(P, Rows) error {
 		args := make([]any, len(types))
 
 		for i, c := range types {
-			idx, ok := fields[c.Name()]
+			name := c.Name()
+			idx, ok := cache[name]
 			if !ok {
-				idx = guessField(v.Type(), strings.ReplaceAll(c.Name(), "_", ""))
-				fields[c.Name()] = idx
+				idx, ok = findFieldIndex(v.Type(), matcher(name))
+				if !ok {
+					return fmt.Errorf("field %q not found", name)
+				}
+				cache[name] = idx
 			}
 
 			args[i] = v.Field(idx).Addr().Interface()

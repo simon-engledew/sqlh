@@ -103,7 +103,7 @@ type testStruct struct {
 	Name string
 }
 
-func TestStructs(t *testing.T) {
+func TestScanIntoWithGuess(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -117,7 +117,36 @@ func TestStructs(t *testing.T) {
 	rows, err := db.Query("SELECT id, name FROM test")
 	require.NoError(t, err)
 
-	items, err := sqlh.Scan(rows, sqlh.ToStruct[testStruct]())
+	items, err := sqlh.Scan(rows, sqlh.Into[testStruct](sqlh.Guess))
+	require.NoError(t, err)
+
+	require.Len(t, items, 2)
+	require.Equal(t, 1, items[0].ID)
+	require.Equal(t, "a", items[0].Name)
+	require.Equal(t, 2, items[1].ID)
+	require.Equal(t, "b", items[1].Name)
+}
+
+type taggedTestStruct struct {
+	ID   int    `sql:"id"`
+	Name string `sql:"name"`
+}
+
+func TestScanIntoWithTags(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = db.Close()
+	})
+
+	mock.ExpectQuery("SELECT id, name FROM test").WillReturnRows(
+		sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "a").AddRow(2, "b"),
+	)
+
+	rows, err := db.Query("SELECT id, name FROM test")
+	require.NoError(t, err)
+
+	items, err := sqlh.Scan(rows, sqlh.Into[taggedTestStruct](sqlh.Tags("sql")))
 	require.NoError(t, err)
 
 	require.Len(t, items, 2)
