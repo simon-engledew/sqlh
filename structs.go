@@ -48,9 +48,35 @@ func IntoStruct[V any, P *V](matcher func(col string) FieldPredicate) func(P, Ro
 }
 
 func FieldMatcher(col string) FieldPredicate {
-	guess := strings.ReplaceAll(col, "_", "")
 	return func(field reflect.StructField) bool {
-		return strings.EqualFold(guess, field.Name)
+		i, j := 0, 0
+
+		for ; i < len(col) && j < len(field.Name); i++ {
+			sr := col[i]
+			tr := field.Name[j]
+
+			if sr == '_' {
+				continue
+			}
+
+			j += 1
+
+			if sr == tr {
+				continue
+			}
+
+			if tr < sr {
+				tr, sr = sr, tr
+			}
+
+			if 'A' <= sr && sr <= 'Z' && tr == sr+'a'-'A' {
+				continue
+			}
+
+			return false
+		}
+
+		return i >= j
 	}
 }
 
