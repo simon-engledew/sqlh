@@ -62,7 +62,7 @@ func Scan[P *V, V any](rows Rows, scan func(P, Rows) error) (out []P, err error)
 	return
 }
 
-func findFieldIndex(t reflect.Type, pred func(field reflect.StructField) bool) (int, bool) {
+func (pred FieldPredicate) Find(t reflect.Type) (int, bool) {
 	for i := 0; i < t.NumField(); i++ {
 		if pred(t.Field(i)) {
 			return i, true
@@ -71,24 +71,11 @@ func findFieldIndex(t reflect.Type, pred func(field reflect.StructField) bool) (
 	return 0, false
 }
 
-func Guess(col string) func(field reflect.StructField) bool {
-	guess := strings.ReplaceAll(col, "_", "")
+type StructMatcher func(col string) FieldPredicate
 
-	return func(field reflect.StructField) bool {
-		return strings.EqualFold(guess, field.Name)
-	}
-}
+type FieldPredicate func(field reflect.StructField) bool
 
-func Tags(key string) func(col string) func(field reflect.StructField) bool {
-	return func(col string) func(field reflect.StructField) bool {
-		return func(field reflect.StructField) bool {
-			tag, _, _ := strings.Cut(field.Tag.Get(key), ",")
-			return tag == col
-		}
-	}
-}
-
-func Into[V any, P *V](matcher func(col string) func(field reflect.StructField) bool) func(P, Rows) error {
+func IntoStruct[V any, P *V](matcher StructMatcher) func(P, Rows) error {
 	cache := map[string]int{}
 	return func(p P, rows Rows) error {
 		types, err := rows.ColumnTypes()
@@ -104,7 +91,7 @@ func Into[V any, P *V](matcher func(col string) func(field reflect.StructField) 
 			name := c.Name()
 			idx, ok := cache[name]
 			if !ok {
-				idx, ok = findFieldIndex(v.Type(), matcher(name))
+				idx, ok = matcher(name).Find(v.Type())
 				if !ok {
 					return fmt.Errorf("field %q not found", name)
 				}
@@ -115,5 +102,32 @@ func Into[V any, P *V](matcher func(col string) func(field reflect.StructField) 
 		}
 
 		return rows.Scan(args...)
+	}
+}
+
+func IntoFields[V any, P *V]() func(P, Rows) error {
+	return IntoStruct[V, P](FieldMatcher)
+}
+
+func FieldMatcher(col string) FieldPredicate {
+	guess := strings.ReplaceAll(col, "_", "")
+	return func(field reflect.StructField) bool {
+		return strings.EqualFold(guess, field.Name)
+	}
+}
+
+func IntoTag[V any, P *V](key string) func(P, Rows) error {
+	return IntoStruct[V, P](TagMatcher(key))
+}
+
+func TagMatcher(key string) StructMatcher {
+	return func(col string) FieldPredicate {
+		return func(field reflect.StructField) bool {
+			tag := field.Tag.Get(key)
+			if i := strings.Index(tag, ","); i >= 0 {
+				tag = tag[:i]
+			}
+			return tag == col
+		}
 	}
 }
