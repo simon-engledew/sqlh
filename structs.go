@@ -6,41 +6,41 @@ import (
 	"strings"
 )
 
-type FieldPredicate func(field reflect.StructField) bool
-
-func (pred FieldPredicate) Find(t reflect.Type) (int, bool) {
-	for i := 0; i < t.NumField(); i++ {
-		if pred(t.Field(i)) {
-			return i, true
-		}
-	}
-	return 0, false
-}
+type FieldPredicate = func(field reflect.StructField) bool
 
 func IntoStruct[V any, P *V](matcher func(col string) FieldPredicate) func(P, Rows) error {
 	cache := map[string]int{}
 	return func(p P, rows Rows) error {
-		types, err := rows.ColumnTypes()
+		columnTypes, err := rows.ColumnTypes()
 		if err != nil {
 			return err
 		}
 
-		v := reflect.Indirect(reflect.ValueOf(p))
+		valueOf := reflect.Indirect(reflect.ValueOf(p))
+		typeOf := valueOf.Type()
 
-		args := make([]any, len(types))
+		args := make([]any, len(columnTypes))
 
-		for i, c := range types {
-			name := c.Name()
+		for i, columnType := range columnTypes {
+			name := columnType.Name()
 			idx, ok := cache[name]
 			if !ok {
-				idx, ok = matcher(name).Find(v.Type())
+				pred := matcher(name)
+
+				for ; idx < typeOf.NumField(); idx++ {
+					if ok = pred(typeOf.Field(idx)); ok {
+						break
+					}
+				}
+
 				if !ok {
 					return fmt.Errorf("field %q not found", name)
 				}
+
 				cache[name] = idx
 			}
 
-			args[i] = v.Field(idx).Addr().Interface()
+			args[i] = valueOf.Field(idx).Addr().Interface()
 		}
 
 		return rows.Scan(args...)
