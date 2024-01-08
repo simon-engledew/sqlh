@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+type FieldPredicate func(field reflect.StructField) bool
+
 func (pred FieldPredicate) Find(t reflect.Type) (int, bool) {
 	for i := 0; i < t.NumField(); i++ {
 		if pred(t.Field(i)) {
@@ -15,11 +17,7 @@ func (pred FieldPredicate) Find(t reflect.Type) (int, bool) {
 	return 0, false
 }
 
-type StructMatcher func(col string) FieldPredicate
-
-type FieldPredicate func(field reflect.StructField) bool
-
-func IntoStruct[V any, P *V](matcher StructMatcher) func(P, Rows) error {
+func IntoStruct[V any, P *V](matcher func(col string) FieldPredicate) func(P, Rows) error {
 	cache := map[string]int{}
 	return func(p P, rows Rows) error {
 		types, err := rows.ColumnTypes()
@@ -56,7 +54,7 @@ func FieldMatcher(col string) FieldPredicate {
 	}
 }
 
-func TagMatcher(key string) StructMatcher {
+func TagMatcher(key string) func(col string) FieldPredicate {
 	return func(col string) FieldPredicate {
 		return func(field reflect.StructField) bool {
 			tag := field.Tag.Get(key)
