@@ -76,7 +76,7 @@ func FieldMatcher(col string) FieldPredicate {
 			return false
 		}
 
-		return i >= j
+		return i == len(col) && j == len(field.Name)
 	}
 }
 
