@@ -51,13 +51,17 @@ func FieldMatcher(col string) FieldPredicate {
 	return func(field reflect.StructField) bool {
 		i, j := 0, 0
 
-		for ; i < len(col) && j < len(field.Name); i++ {
+		for ; i < len(col); i++ {
 			sr := col[i]
-			tr := field.Name[j]
-
 			if sr == '_' {
 				continue
 			}
+
+			if j >= len(field.Name) {
+				return false
+			}
+
+			tr := field.Name[j]
 
 			j += 1
 

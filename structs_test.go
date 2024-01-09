@@ -5,6 +5,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/simon-engledew/sqlh"
 	"github.com/stretchr/testify/require"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -84,4 +85,11 @@ func TestScanIntoStructWithTagMatcher(t *testing.T) {
 	require.Equal(t, "a", items[0].Name)
 	require.Equal(t, 2, items[1].ID)
 	require.Equal(t, "b", items[1].Name)
+}
+
+func TestStructMatcher(t *testing.T) {
+	require.True(t, sqlh.FieldMatcher("_")(reflect.StructField{Name: ""}))
+	require.False(t, sqlh.FieldMatcher("A")(reflect.StructField{Name: ""}))
+	require.True(t, sqlh.FieldMatcher("hello_there")(reflect.StructField{Name: "HelloThere"}))
+	require.False(t, sqlh.FieldMatcher("hello")(reflect.StructField{Name: "There"}))
 }
