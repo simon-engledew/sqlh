@@ -47,23 +47,19 @@ func IntoStruct[V any, P *V](matcher func(col string) FieldPredicate) func(P, Ro
 	}
 }
 
+func next(v string, i int) int {
+	for ; i < len(v) && v[i] == '_'; i++ {
+	}
+	return i
+}
+
 func FieldMatcher(col string) FieldPredicate {
 	return func(field reflect.StructField) bool {
-		i, j := 0, 0
+		i, j := next(col, 0), 0
 
-		for ; i < len(col); i++ {
+		for ; i < len(col) && j < len(field.Name); i, j = next(col, i+1), j+1 {
 			sr := col[i]
-			if sr == '_' {
-				continue
-			}
-
-			if j >= len(field.Name) {
-				return false
-			}
-
 			tr := field.Name[j]
-
-			j += 1
 
 			if sr == tr {
 				continue

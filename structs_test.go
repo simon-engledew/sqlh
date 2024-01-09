@@ -91,5 +91,7 @@ func TestStructMatcher(t *testing.T) {
 	require.True(t, sqlh.FieldMatcher("_")(reflect.StructField{Name: ""}))
 	require.False(t, sqlh.FieldMatcher("A")(reflect.StructField{Name: ""}))
 	require.True(t, sqlh.FieldMatcher("hello_there")(reflect.StructField{Name: "HelloThere"}))
+	require.True(t, sqlh.FieldMatcher("hello__there")(reflect.StructField{Name: "HelloThere"}))
 	require.False(t, sqlh.FieldMatcher("hello")(reflect.StructField{Name: "There"}))
+	require.False(t, sqlh.FieldMatcher("hello")(reflect.StructField{Name: "Hell"}))
 }
