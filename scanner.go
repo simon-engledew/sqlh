@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// Rows allows wrappers for sql.Rows to be passed to the scanning functions.
 type Rows interface {
 	Row
 	Close() error
