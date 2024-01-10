@@ -8,9 +8,9 @@ import (
 
 type FieldPredicate = func(field reflect.StructField) bool
 
-func IntoStruct[V any, P *V](matcher func(col string) FieldPredicate) func(P, Rows) error {
+func IntoStruct[V any, P *V](matcher func(col string) FieldPredicate) func(P, Row) error {
 	cache := map[string]int{}
-	return func(p P, rows Rows) error {
+	return func(p P, rows Row) error {
 		columnTypes, err := rows.ColumnTypes()
 		if err != nil {
 			return err

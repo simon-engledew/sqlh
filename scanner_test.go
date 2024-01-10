@@ -10,7 +10,7 @@ import (
 
 func ExampleScanner() {
 	rows, _ := db.Query("SELECT id, name FROM scanner_example")
-	items, _ := sqlh.Scan(rows, func(item *testRow, rows sqlh.Rows) error {
+	items, _ := sqlh.Scan(rows, func(item *testRow, rows sqlh.Row) error {
 		return rows.Scan(&item.id, &item.name)
 	})
 	for _, item := range items {
@@ -39,7 +39,7 @@ func TestScanner(t *testing.T) {
 	rows, err := db.Query("SELECT id, name FROM test")
 	require.NoError(t, err)
 
-	items, err := sqlh.Scan(rows, func(row *testRow, rows sqlh.Rows) error {
+	items, err := sqlh.Scan(rows, func(row *testRow, rows sqlh.Row) error {
 		return rows.Scan(&row.id, &row.name)
 	})
 	require.NoError(t, err)
@@ -88,7 +88,7 @@ func TestScannerAnonymous(t *testing.T) {
 	items, err := sqlh.Scan(rows, func(row *struct {
 		id   int
 		name string
-	}, rows sqlh.Rows) error {
+	}, rows sqlh.Row) error {
 		return rows.Scan(&row.id, &row.name)
 	})
 	require.NoError(t, err)
