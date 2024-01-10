@@ -95,3 +95,17 @@ func TestStructMatcher(t *testing.T) {
 	require.False(t, sqlh.FieldMatcher("hello")(reflect.StructField{Name: "There"}))
 	require.False(t, sqlh.FieldMatcher("hello")(reflect.StructField{Name: "Hell"}))
 }
+
+func TestStructValues(t *testing.T) {
+	cols := []string{"id", "first_name"}
+
+	from, err := sqlh.FromStruct[testStruct](sqlh.FieldMatcher, cols)
+	require.NoError(t, err)
+
+	query := sqlh.SQL("INSERT INTO test (id, first_name) VALUES ?", sqlh.Values(
+		from(testStruct{ID: 1, FirstName: "hello"}),
+		from(testStruct{ID: 2, FirstName: "there"}),
+	))
+	require.Equal(t, `INSERT INTO test (id, first_name) VALUES (?, ?), (?, ?)`, query.Statement)
+	require.Equal(t, []any{1, "hello", 2, "there"}, query.Args)
+}

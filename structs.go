@@ -18,6 +18,9 @@ func IntoStruct[V any, P *V](matcher func(col string) FieldPredicate) func(P, Ro
 
 		valueOf := reflect.Indirect(reflect.ValueOf(p))
 		typeOf := valueOf.Type()
+		if typeOf.Kind() != reflect.Struct {
+			return fmt.Errorf("IntoStruct of non-struct type %T", p)
+		}
 
 		args := make([]any, len(columnTypes))
 
@@ -90,4 +93,48 @@ func TagMatcher(key string) func(col string) FieldPredicate {
 			return tag == col
 		}
 	}
+}
+
+func FromStruct[T any](matcher func(col string) FieldPredicate, cols []string) (func(v T) []any, error) {
+	cache := map[string]int{}
+
+	{
+		var zero T
+		typeOf := reflect.TypeOf(zero)
+
+		if typeOf.Kind() != reflect.Struct {
+			return nil, fmt.Errorf("FromStruct of non-struct type %T", zero)
+		}
+
+		for _, name := range cols {
+			idx, ok := cache[name]
+			if !ok {
+				pred := matcher(name)
+
+				for ; idx < typeOf.NumField(); idx++ {
+					if ok = pred(typeOf.Field(idx)); ok {
+						break
+					}
+				}
+
+				if !ok {
+					return nil, fmt.Errorf("field %q not found", name)
+				}
+
+				cache[name] = idx
+			}
+		}
+	}
+
+	return func(v T) []any {
+		valueOf := reflect.ValueOf(v)
+
+		args := make([]any, len(cols))
+
+		for i, col := range cols {
+			args[i] = valueOf.Field(cache[col]).Interface()
+		}
+
+		return args
+	}, nil
 }
