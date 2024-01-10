@@ -11,7 +11,7 @@ import (
 )
 
 func ExampleIntoStruct() {
-	rows, _ := db.Query("SELECT id, name FROM scanner_example")
+	rows, _ := db.Query("SELECT id, name FROM into_struct_example")
 	items, _ := sqlh.Scan(rows, sqlh.IntoStruct[struct {
 		ID   int
 		Name string
