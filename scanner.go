@@ -46,7 +46,7 @@ func Iter(rows Rows, fn func() error) (err error) {
 }
 
 // ScanV takes a function that can scan a given sql.Rows into []V.
-func ScanV[P *V, V any](rows Rows, scan func(P, Row) error) (out []V, err error) {
+func ScanV[V any](rows Rows, scan func(*V, Row) error) (out []V, err error) {
 	err = Iter(rows, func() error {
 		var v V
 		err := scan(&v, rows)
@@ -58,8 +58,8 @@ func ScanV[P *V, V any](rows Rows, scan func(P, Row) error) (out []V, err error)
 	return
 }
 
-// Scan takes a function that can scan a given sql.Rows into []P.
-func Scan[P *V, V any](rows Rows, scan func(P, Row) error) (out []P, err error) {
+// Scan takes a function that can scan a given sql.Rows into []*V.
+func Scan[V any](rows Rows, scan func(*V, Row) error) (out []*V, err error) {
 	err = Iter(rows, func() error {
 		var v V
 		err := scan(&v, rows)
