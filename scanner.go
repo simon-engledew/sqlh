@@ -3,7 +3,6 @@ package sqlh
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 )
 
 // Rows allows wrappers for sql.Rows to be passed to the scanning functions.
@@ -33,12 +32,12 @@ func Iter(rows Rows, fn func() error) (err error) {
 	}()
 
 	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return err
+		if err = rows.Err(); err != nil {
+			return
 		}
 
-		if err := fn(); err != nil {
-			return fmt.Errorf("failed to scan rows: %w", err)
+		if err = fn(); err != nil {
+			return
 		}
 	}
 
