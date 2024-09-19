@@ -16,16 +16,12 @@ func In[T any, S ~[]T](items S) Expr {
 	case 3:
 		return SQL("?, ?, ?", items[0], items[1], items[2])
 	default:
-		return SQL("?"+strings.Repeat(", ?", len(items)-1), anys(items)...)
+		params := make([]any, len(items))
+		for i := range items {
+			params[i] = items[i]
+		}
+		return SQL("?"+strings.Repeat(", ?", len(items)-1), params...)
 	}
-}
-
-func anys[T any, S ~[]T](items S) []any {
-	out := make([]any, len(items))
-	for i := range items {
-		out[i] = items[i]
-	}
-	return out
 }
 
 // Values allows you to build a multi-row insert statement.
@@ -58,7 +54,7 @@ func SQL(stmt string, args ...any) Expr {
 	}
 
 	if subqueries == 0 {
-		return Expr{Statement: stmt, Args: anys(args)}
+		return Expr{Statement: stmt, Args: args}
 	}
 
 	var expr Expr
