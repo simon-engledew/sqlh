@@ -16,20 +16,16 @@ func In[T any, S ~[]T](items S) Expr {
 	case 3:
 		return SQL("?, ?, ?", items[0], items[1], items[2])
 	default:
-		var b strings.Builder
-		b.Grow((size * 3) - 2)
-		b.WriteString("?")
-
-		args := make([]any, 1, len(items))
-		args[0] = items[0]
-
-		for _, item := range items[1:] {
-			args = append(args, item)
-			b.WriteString(", ?")
-		}
-
-		return SQL(b.String(), args...)
+		return SQL("?"+strings.Repeat(", ?", len(items)-1), anys(items)...)
 	}
+}
+
+func anys[T any, S ~[]T](items S) []any {
+	out := make([]any, len(items))
+	for i := range items {
+		out[i] = items[i]
+	}
+	return out
 }
 
 // Values allows you to build a multi-row insert statement.
@@ -48,16 +44,24 @@ func SQL(stmt string, args ...any) Expr {
 		return Expr{Statement: stmt}
 	}
 
-	var expr Expr
-
+	subqueries := 0
 	stmtSize := len(stmt)
-	argsSize := len(args)
+	argsSize := 0
 	for _, arg := range args {
 		if sub, ok := arg.(Expr); ok {
-			stmtSize += len(sub.Statement)
+			subqueries += 1
+			stmtSize += len(sub.Statement) - 1 // do not include space for the original ?
 			argsSize += len(sub.Args)
+		} else {
+			argsSize += 1
 		}
 	}
+
+	if subqueries == 0 {
+		return Expr{Statement: stmt, Args: anys(args)}
+	}
+
+	var expr Expr
 
 	expr.Args = make([]any, 0, argsSize)
 
