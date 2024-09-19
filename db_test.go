@@ -1,13 +1,11 @@
 package sqlh_test
 
 import (
-	"context"
 	"database/sql"
 	"github.com/DATA-DOG/go-sqlmock"
 )
 
 var db *sql.DB
-var ctx = context.Background()
 
 func init() {
 	// create mock database for examples
