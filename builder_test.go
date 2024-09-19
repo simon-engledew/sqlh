@@ -2,8 +2,8 @@ package sqlh_test
 
 import (
 	"fmt"
+	"github.com/shoenig/test/must"
 	"github.com/simon-engledew/sqlh"
-	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -35,10 +35,10 @@ func TestIn(t *testing.T) {
 		{[]int{}, ""},
 	} {
 		q := sqlh.In(v.Args)
-		require.Equal(t, v.Expected, q.Statement)
-		require.Len(t, q.Args, len(v.Args))
+		must.EqOp(t, v.Expected, q.Statement)
+		must.Len(t, len(v.Args), q.Args)
 		for n := range v.Args {
-			require.Equal(t, v.Args[n], q.Args[n])
+			must.EqOp(t, v.Args[n], q.Args[n].(int))
 		}
 	}
 }
@@ -50,36 +50,36 @@ func TestSQL(t *testing.T) {
 
 	c := sqlh.SQL(`SELECT * FROM (?) AS a, (?) AS b LIMIT ?, ?`, a, b, 1, 10)
 
-	require.Equal(t, []any{1, 2, 1, 10}, c.Args)
-	require.Equal(t, `SELECT * FROM (SELECT 1 FROM a WHERE id = ?) AS a, (SELECT 1 FROM b WHERE id = ?) AS b LIMIT ?, ?`, c.Statement)
+	must.SliceEqOp(t, []any{1, 2, 1, 10}, c.Args)
+	must.EqOp(t, `SELECT * FROM (SELECT 1 FROM a WHERE id = ?) AS a, (SELECT 1 FROM b WHERE id = ?) AS b LIMIT ?, ?`, c.Statement)
 
 	d := sqlh.SQL(`SELECT * FROM test WHERE id IN (?, ?, ?, ?)`, 1, 2, 3)
 
-	require.Equal(t, []any{1, 2, 3}, d.Args)
-	require.Equal(t, `SELECT * FROM test WHERE id IN (?, ?, ?, ?)`, d.Statement)
+	must.SliceEqOp(t, []any{1, 2, 3}, d.Args)
+	must.EqOp(t, `SELECT * FROM test WHERE id IN (?, ?, ?, ?)`, d.Statement)
 
 	e := sqlh.SQL(`SELECT * FROM test WHERE id IN (?)`, sqlh.In([]int{1, 2, 3}))
 
-	require.Equal(t, []any{1, 2, 3}, e.Args)
-	require.Equal(t, `SELECT * FROM test WHERE id IN (?, ?, ?)`, e.Statement)
+	must.SliceEqOp(t, []any{1, 2, 3}, e.Args)
+	must.EqOp(t, `SELECT * FROM test WHERE id IN (?, ?, ?)`, e.Statement)
 
 	f := sqlh.SQL("(SELECT 1)")
 	g := sqlh.SQL("(SELECT 2)")
 
 	h := sqlh.SQL("SELECT * FROM test WHERE id IN (?)", sqlh.In([]any{f, g}))
 
-	require.Equal(t, "SELECT * FROM test WHERE id IN ((SELECT 1), (SELECT 2))", h.Statement)
-	require.Len(t, h.Args, 0)
+	must.EqOp(t, "SELECT * FROM test WHERE id IN ((SELECT 1), (SELECT 2))", h.Statement)
+	must.Len(t, 0, h.Args)
 
 	i := sqlh.SQL(`SELECT 1 FROM a WHERE id = ?`)
-	require.Equal(t, `SELECT 1 FROM a WHERE id = ?`, i.Statement)
+	must.EqOp(t, `SELECT 1 FROM a WHERE id = ?`, i.Statement)
 
 	j := sqlh.SQL(`INSERT INTO a (id, name) VALUES ?`, sqlh.Values(
 		[]any{1, "hello"},
 		[]any{2, "test"},
 	))
-	require.Equal(t, `INSERT INTO a (id, name) VALUES (?, ?), (?, ?)`, j.Statement)
-	require.Equal(t, []any{1, "hello", 2, "test"}, j.Args)
+	must.EqOp(t, `INSERT INTO a (id, name) VALUES (?, ?), (?, ?)`, j.Statement)
+	must.SliceEqOp(t, []any{1, "hello", 2, "test"}, j.Args)
 }
 
 func TestDebugSQL(t *testing.T) {

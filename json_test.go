@@ -3,8 +3,8 @@ package sqlh_test
 import (
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/shoenig/test/must"
 	"github.com/simon-engledew/sqlh"
-	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -17,7 +17,7 @@ func ExampleJson() {
 
 func TestJson(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	require.NoError(t, err)
+	must.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
@@ -29,8 +29,8 @@ func TestJson(t *testing.T) {
 	var id int
 	var document []int
 
-	require.NoError(t, db.QueryRow("SELECT id, document FROM test").Scan(&id, sqlh.Json(&document)))
+	must.NoError(t, db.QueryRow("SELECT id, document FROM test").Scan(&id, sqlh.Json(&document)))
 
-	require.Equal(t, id, 1)
-	require.Equal(t, document, []int{1, 2, 3})
+	must.EqOp(t, id, 1)
+	must.SliceEqOp(t, document, []int{1, 2, 3})
 }

@@ -3,8 +3,8 @@ package sqlh_test
 import (
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/shoenig/test/must"
 	"github.com/simon-engledew/sqlh"
-	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -27,7 +27,7 @@ type testRow struct {
 
 func TestScanner(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	require.NoError(t, err)
+	must.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
@@ -37,24 +37,24 @@ func TestScanner(t *testing.T) {
 	)
 
 	rows, err := db.Query("SELECT id, name FROM test")
-	require.NoError(t, err)
+	must.NoError(t, err)
 
 	items, err := sqlh.Scan(rows, func(row *testRow, rows sqlh.Row) error {
 		return rows.Scan(&row.id, &row.name)
 	})
-	require.NoError(t, err)
+	must.NoError(t, err)
 
 	expected := []*testRow{
 		{1, "a"},
 		{2, "b"},
 	}
 
-	require.Equal(t, expected, items)
+	must.Eq(t, expected, items)
 }
 
 func TestPluck(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	require.NoError(t, err)
+	must.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
@@ -67,13 +67,13 @@ func TestPluck(t *testing.T) {
 
 	ids, err := sqlh.Pluck[uint64](db.Query("SELECT id FROM pluck_example"))
 
-	require.NoError(t, err)
-	require.Equal(t, expected, ids)
+	must.NoError(t, err)
+	must.SliceEqOp(t, expected, ids)
 }
 
 func TestScannerAnonymous(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	require.NoError(t, err)
+	must.NoError(t, err)
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
@@ -83,7 +83,7 @@ func TestScannerAnonymous(t *testing.T) {
 	)
 
 	rows, err := db.Query("SELECT id, name FROM test")
-	require.NoError(t, err)
+	must.NoError(t, err)
 
 	items, err := sqlh.Scan(rows, func(row *struct {
 		id   int
@@ -91,9 +91,9 @@ func TestScannerAnonymous(t *testing.T) {
 	}, rows sqlh.Row) error {
 		return rows.Scan(&row.id, &row.name)
 	})
-	require.NoError(t, err)
+	must.NoError(t, err)
 
-	require.Len(t, items, 2)
-	require.Equal(t, 1, items[0].id)
-	require.Equal(t, 2, items[1].id)
+	must.Len(t, 2, items)
+	must.EqOp(t, 1, items[0].id)
+	must.EqOp(t, 2, items[1].id)
 }
