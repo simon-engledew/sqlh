@@ -5,7 +5,7 @@ import (
 	"github.com/simon-engledew/sqlh"
 )
 
-func ExampleDebug() {
+func ExampleDebugSQL() {
 	subquery := sqlh.DebugSQL(`SELECT id FROM users WHERE suspended_at IS NULL AND parent_id = ?`, 10)
 	query := sqlh.DebugSQL(`SELECT event FROM events WHERE user_id IN (?)`, subquery)
 	fmt.Println(query.Statement)
