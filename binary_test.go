@@ -19,9 +19,6 @@ func ExampleBinary() {
 func TestBinary(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	must.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
 
 	mock.ExpectQuery("SELECT id, location FROM test").WillReturnRows(
 		sqlmock.NewRows([]string{"id", "location"}).AddRow(1, "http://example.com"),

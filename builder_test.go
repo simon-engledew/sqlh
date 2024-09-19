@@ -82,7 +82,7 @@ func TestSQL(t *testing.T) {
 	must.SliceEqOp(t, []any{1, "hello", 2, "test"}, j.Args)
 }
 
-func TestDebugSQL(t *testing.T) {
+func TestDebugQuery(t *testing.T) {
 	a := sqlh.DebugSQL(`SELECT 1 FROM a WHERE id = ?`, 1)
 
 	b := sqlh.DebugSQL(`SELECT 1 FROM b WHERE id = ?`, 2)

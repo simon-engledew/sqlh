@@ -24,6 +24,9 @@ func init() {
 	mock.ExpectQuery("SELECT id, name FROM scanner_example").WillReturnRows(
 		sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "example").AddRow(2, "scanner"),
 	)
+	mock.ExpectQuery("SELECT name FROM users").WillReturnRows(
+		sqlmock.NewRows([]string{"name"}).AddRow("user a").AddRow("user b"),
+	)
 	mock.ExpectQuery("SELECT id, name FROM into_struct_example").WillReturnRows(
 		sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "example").AddRow(2, "scanner"),
 	)

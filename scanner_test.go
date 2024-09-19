@@ -10,14 +10,24 @@ import (
 
 func ExampleScanner() {
 	rows, _ := db.Query("SELECT id, name FROM scanner_example")
-	items, _ := sqlh.Scan(rows, func(item *testRow, rows sqlh.Row) error {
-		return rows.Scan(&item.id, &item.name)
+	items, _ := sqlh.Scan(rows, func(item *testRow, row sqlh.Row) error {
+		return row.Scan(&item.id, &item.name)
 	})
 	for _, item := range items {
 		fmt.Println(item.id, item.name)
 	}
 	// Output: 1 example
 	// 2 scanner
+}
+
+func ExamplePluck() {
+	userIDs := []int{1, 2, 3}
+	names, _ := sqlh.Pluck[string](sqlh.SQL(`SELECT name FROM users WHERE id IN (?)`, sqlh.In(userIDs)).Query(db))
+	for _, name := range names {
+		fmt.Println(name)
+	}
+	// Output: user a
+	// user b
 }
 
 type testRow struct {
@@ -28,9 +38,6 @@ type testRow struct {
 func TestScanner(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	must.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
 
 	mock.ExpectQuery("SELECT id, name FROM test").WillReturnRows(
 		sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "a").AddRow(2, "b"),
@@ -55,9 +62,6 @@ func TestScanner(t *testing.T) {
 func TestPluck(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	must.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
 
 	mock.ExpectQuery("SELECT id FROM pluck_example").WillReturnRows(
 		sqlmock.NewRows([]string{"id"}).AddRow(1).AddRow(2),
@@ -74,9 +78,6 @@ func TestPluck(t *testing.T) {
 func TestScannerAnonymous(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	must.NoError(t, err)
-	t.Cleanup(func() {
-		_ = db.Close()
-	})
 
 	mock.ExpectQuery("SELECT id, name FROM test").WillReturnRows(
 		sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "a").AddRow(2, "b"),
