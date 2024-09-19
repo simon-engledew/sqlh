@@ -80,6 +80,9 @@ func TestSQL(t *testing.T) {
 	))
 	must.EqOp(t, `INSERT INTO a (id, name) VALUES (?, ?), (?, ?)`, j.Statement)
 	must.SliceEqOp(t, []any{1, "hello", 2, "test"}, j.Args)
+
+	must.EqOp(t, sqlh.SQL(`SELECT 1 FROM a WHERE ?`, sqlh.SQL(`id = ?`, 1), 2, 3, 4).Statement, `SELECT 1 FROM a WHERE id = ?`)
+
 }
 
 func TestDebugQuery(t *testing.T) {

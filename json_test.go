@@ -1,6 +1,7 @@
 package sqlh_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/shoenig/test/must"
@@ -41,10 +42,10 @@ func TestJsonRows(t *testing.T) {
 	})
 
 	mock.ExpectQuery("SELECT document FROM test").WillReturnRows(
-		sqlmock.NewRows([]string{"document"}).AddRow("[1, 2, 3]").AddRow("[2, 3, 4]"),
+		sqlmock.NewRows([]string{"document"}).AddRow("[1, 2, 3]").AddRow([]byte("[2, 3, 4]")),
 	)
 
-	rows, err := sqlh.SQL(`SELECT document FROM test`).Query(db)
+	rows, err := sqlh.SQL(`SELECT document FROM test WHERE id = ?`, sqlh.Json(json.RawMessage(`1`))).Query(db)
 	must.NoError(t, err)
 
 	documents, err := sqlh.ScanV(rows, func(v *[]int32, rows sqlh.Row) error {
@@ -52,4 +53,16 @@ func TestJsonRows(t *testing.T) {
 	})
 	must.NoError(t, err)
 	must.Eq(t, documents, [][]int32{{1, 2, 3}, {2, 3, 4}})
+}
+
+func TestNotJson(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	must.NoError(t, err)
+
+	mock.ExpectQuery("SELECT data FROM test").WillReturnRows(
+		sqlmock.NewRows([]string{"data"}).AddRow(1),
+	)
+
+	var data []uint32
+	must.Error(t, db.QueryRow("SELECT data FROM test").Scan(sqlh.Json(&data)))
 }
