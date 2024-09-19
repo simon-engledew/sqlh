@@ -1,72 +1,8 @@
 package sqlh
 
 import (
-	"context"
-	"database/sql"
-	"fmt"
-	"os/exec"
-	"path/filepath"
-	"runtime"
 	"strings"
-	"sync"
 )
-
-type Expr struct {
-	Statement string
-	Args      []any
-}
-
-func (e Expr) String() string {
-	return e.Statement
-}
-
-// Query calls db.Query, passing in the SQL statement and its arguments.
-// See https://pkg.go.dev/database/sql#DB.Query
-func (e Expr) Query(db interface {
-	Query(query string, args ...any) (*sql.Rows, error)
-}) (*sql.Rows, error) {
-	return db.Query(e.Statement, e.Args...)
-}
-
-// QueryContext calls db.QueryContext, passing in the SQL statement and its arguments.
-// See https://pkg.go.dev/database/sql#DB.QueryContext
-func (e Expr) QueryContext(ctx context.Context, db interface {
-	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-}) (*sql.Rows, error) {
-	return db.QueryContext(ctx, e.Statement, e.Args...)
-}
-
-// QueryRow calls db.QueryRow, passing in the SQL statement and its arguments.
-// See https://pkg.go.dev/database/sql#DB.QueryRow
-func (e Expr) QueryRow(db interface {
-	QueryRow(query string, args ...any) *sql.Row
-}) *sql.Row {
-	return db.QueryRow(e.Statement, e.Args...)
-}
-
-// QueryRowContext calls db.QueryRowContext, passing in the SQL statement and its arguments.
-// See https://pkg.go.dev/database/sql#DB.QueryRowContext
-func (e Expr) QueryRowContext(ctx context.Context, db interface {
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-}) *sql.Row {
-	return db.QueryRowContext(ctx, e.Statement, e.Args...)
-}
-
-// Exec calls db.Exec, passing in the SQL statement and its arguments.
-// See https://pkg.go.dev/database/sql#DB.Exec
-func (e Expr) Exec(db interface {
-	Exec(query string, args ...any) (sql.Result, error)
-}) (sql.Result, error) {
-	return db.Exec(e.Statement, e.Args...)
-}
-
-// ExecContext calls db.ExecContext, passing in the SQL statement and its arguments.
-// See https://pkg.go.dev/database/sql#DB.ExecContext
-func (e Expr) ExecContext(ctx context.Context, db interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-}) (sql.Result, error) {
-	return db.ExecContext(ctx, e.Statement, e.Args...)
-}
 
 // In takes parameters and returns an Expr that can be used in an SQL IN clause.
 func In[T any, S ~[]T](items S) Expr {
@@ -96,44 +32,13 @@ func In[T any, S ~[]T](items S) Expr {
 	}
 }
 
+// Values allows you to build a multi-row insert statement.
 func Values(values ...[]any) Expr {
 	items := make([]Expr, len(values))
 	for n, value := range values {
 		items[n] = SQL("(?)", In(value))
 	}
 	return In(items)
-}
-
-func indent(v string) string {
-	if !strings.Contains(v, "\n") {
-		return v
-	}
-	return "\n\t" + strings.Join(strings.Split(strings.TrimSpace(v), "\n"), "\n\t") + "\n"
-}
-
-func ignoreError[T []byte | string](s T, _ error) string {
-	return string(s)
-}
-
-var moduleRoot = sync.OnceValue(func() string {
-	return filepath.Dir(ignoreError(exec.Command("go", "env", "GOMOD").Output()))
-})
-
-// DebugSQL annotates the query with the caller and indents it if it contains a newline.
-func DebugSQL(stmt string, args ...any) Expr {
-	_, file, line, _ := runtime.Caller(1)
-
-	for n, arg := range args {
-		if subquery, ok := arg.(Expr); ok {
-			args[n] = Expr{Statement: indent(subquery.Statement), Args: subquery.Args}
-		}
-	}
-
-	if path := ignoreError(filepath.Rel(moduleRoot(), file)); path != "" {
-		return SQL(fmt.Sprintf("\n/* %s:%d */ %s", path, line, stmt), args...)
-	}
-
-	return SQL(stmt, args...)
 }
 
 // SQL takes an SQL fragment and returns an Expr that flattens any nested queries and their
