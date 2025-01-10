@@ -7,19 +7,19 @@ import (
 	"fmt"
 )
 
-type jsonType[T any] struct {
-	value T
+type jsonType struct {
+	value any
 }
 
 // Json converts to or from a json value.
-func Json[T any](v T) interface {
+func Json(v any) interface {
 	sql.Scanner
 	driver.Valuer
 } {
-	return jsonType[T]{value: v}
+	return jsonType{value: v}
 }
 
-func (b jsonType[T]) Scan(val interface{}) error {
+func (b jsonType) Scan(val interface{}) error {
 	switch data := val.(type) {
 	case []byte:
 		return json.Unmarshal(data, b.value)
@@ -30,7 +30,7 @@ func (b jsonType[T]) Scan(val interface{}) error {
 	}
 }
 
-func (b jsonType[T]) Value() (driver.Value, error) {
+func (b jsonType) Value() (driver.Value, error) {
 	data, err := json.Marshal(b.value)
 	return string(data), err
 }
